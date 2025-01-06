@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  tron-node:
+    image: tronprotocol/java-tron
+    container_name: tron-node
+    command: ["-c", "/java-tron/config/main_net_config.conf"]
+    environment:
+      - enableFullNode=true
+    volumes:
+      - /mnt/data-pool/share/tron/output-directory:/java-tron/output-directory
+      - /mnt/data-pool/share/tron/logs:/java-tron/logs
+      - /mnt/data-pool/share/tron/config:/java-tron/config
+      - /mnt/data-pool/share/tron/trace:/java-tron/vm_trace
+    ports:
+      - 8090:8090
+      - 8091:8091
+      - 18888:18888
+      - 50051:50051
+      - 8545:8545
+    networks:
+      - tron-net
+
+  proxy:
+    build: .
+    container_name: tron-proxy
+    depends_on:
+      - tron-node
+    volumes:
+      - /mnt/data-pool/share/tron/trace:/vm_trace:
+    ports:
+      - "9090:9090"
+    environment:
+      - TRON_JSONRPC_ENDPOINT=http://tron-node:8545/jsonrpc
+      - TRON_REST_ENDPOINT=http://tron-node:8090/wallet/gettransactioninfobyblocknum
+    networks:
+      - tron-net
+    depends_on:
+      - tron-node
+    restart: always
+networks:
+  tron-net:
